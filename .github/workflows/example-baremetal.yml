@@ -1,0 +1,27 @@
+name: Deploy to VPS (Baremetal)
+
+# This is an EXAMPLE workflow - it will NOT trigger automatically
+# Copy this to your own repository and customize as needed
+on:
+  workflow_dispatch:  # Manual trigger only - won't run automatically
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to VPS (Baremetal)
+        uses: OpsGuild/VPS-Deploy@v1
+        with:
+          git_url: ${{ secrets.GIT_URL }}
+          git_auth_method: token
+          git_token: ${{ secrets.GITHUB_TOKEN }}
+          git_user: ${{ github.actor }}
+          remote_host: ${{ secrets.VPS_HOST }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          deployment_type: baremetal
+          environment: prod
+          # Optional: specify custom command
+          # baremetal_command: "npm install && npm run build && pm2 restart app"
+
