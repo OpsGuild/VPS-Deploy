@@ -1,0 +1,125 @@
+name: 'VPS Deploy'
+description: 'Deploy applications to VPS servers via SSH with support for baremetal, Docker, or Kubernetes deployments'
+branding:
+  icon: 'server'
+  color: 'blue'
+inputs:
+  git_url:
+    description: 'Git repository URL to clone and deploy'
+    required: true
+  git_auth_method:
+    description: 'Git authentication method: token (HTTPS with token), ssh (SSH key), or none (public repos only)'
+    required: false
+    default: 'token'
+  git_token:
+    description: 'GitHub token for authentication (required if git_auth_method is token)'
+    required: false
+  git_user:
+    description: 'GitHub username (required if git_auth_method is token)'
+    required: false
+  git_ssh_key:
+    description: 'SSH private key for Git authentication (required if git_auth_method is ssh). Can be same as ssh_key'
+    required: false
+  deployment_type:
+    description: 'Deployment type: baremetal (direct to server), docker (Docker Compose), or k8s (Kubernetes)'
+    required: false
+    default: 'docker'
+  environment:
+    description: 'Deployment environment (dev, staging, prod)'
+    required: false
+    default: 'dev'
+  remote_user:
+    description: 'SSH remote user'
+    required: false
+    default: 'root'
+  remote_host:
+    description: 'SSH remote host IP or domain'
+    required: true
+  remote_dir:
+    description: 'Remote directory path for deployment'
+    required: false
+  ssh_key:
+    description: 'SSH private key for authentication (base64 encoded or raw)'
+    required: false
+  remote_password:
+    description: 'SSH password for authentication (if not using SSH key)'
+    required: false
+  registry_type:
+    description: 'Docker registry type (ghcr, dockerhub, ecr)'
+    required: false
+    default: 'ghcr'
+  registry_username:
+    description: 'Docker registry username (for dockerhub)'
+    required: false
+  registry_password:
+    description: 'Docker registry password (for dockerhub)'
+    required: false
+  aws_region:
+    description: 'AWS region (for ECR)'
+    required: false
+  aws_account_id:
+    description: 'AWS account ID (for ECR)'
+    required: false
+  profile:
+    description: 'Docker Compose profile to use (for docker deployment type)'
+    required: false
+  baremetal_command:
+    description: 'Command to run for baremetal deployment (e.g., "make deploy" or "./deploy.sh"). Defaults to "make {environment}" if Makefile exists'
+    required: false
+  k8s_manifest_path:
+    description: 'Path to Kubernetes manifest file or directory (for k8s deployment type). Defaults to "k8s/" or "manifests/"'
+    required: false
+  k8s_namespace:
+    description: 'Kubernetes namespace to deploy to (for k8s deployment type)'
+    required: false
+    default: 'default'
+  use_sudo:
+    description: 'Use sudo for commands (true/false). Some commands may still require sudo regardless of this setting'
+    required: false
+    default: 'true'
+outputs:
+  deployment_status:
+    description: 'Deployment status (success/failed)'
+  remote_hostname:
+    description: 'Hostname of the remote server'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install --upgrade pip
+        pip install -r ${{ github.action_path }}/requirements.txt
+    - name: Run deployment
+      shell: bash
+      env:
+        GIT_URL: ${{ inputs.git_url }}
+        GIT_AUTH_METHOD: ${{ inputs.git_auth_method }}
+        GIT_TOKEN: ${{ inputs.git_token }}
+        GIT_USER: ${{ inputs.git_user }}
+        GIT_SSH_KEY: ${{ inputs.git_ssh_key }}
+        DEPLOYMENT_TYPE: ${{ inputs.deployment_type }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        REMOTE_USER: ${{ inputs.remote_user }}
+        REMOTE_HOST: ${{ inputs.remote_host }}
+        REMOTE_DIR: ${{ inputs.remote_dir }}
+        SSH_KEY: ${{ inputs.ssh_key }}
+        REMOTE_PASSWORD: ${{ inputs.remote_password }}
+        REGISTRY_TYPE: ${{ inputs.registry_type }}
+        REGISTRY_USERNAME: ${{ inputs.registry_username }}
+        REGISTRY_PASSWORD: ${{ inputs.registry_password }}
+        AWS_REGION: ${{ inputs.aws_region }}
+        AWS_ACCOUNT_ID: ${{ inputs.aws_account_id }}
+        PROFILE: ${{ inputs.profile }}
+        BAREMETAL_COMMAND: ${{ inputs.baremetal_command }}
+        K8S_MANIFEST_PATH: ${{ inputs.k8s_manifest_path }}
+        K8S_NAMESPACE: ${{ inputs.k8s_namespace }}
+        USE_SUDO: ${{ inputs.use_sudo }}
+      run: |
+        python ${{ github.action_path }}/deploy.py
+
